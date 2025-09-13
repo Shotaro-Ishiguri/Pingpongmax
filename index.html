@@ -70,6 +70,49 @@
   }, { passive:false });
   addEventListener('keyup', e => { const k = keymap[e.code]; if(!k) return; state.keys.delete(k); });
 
+// === モバイル操作（左半分ドラッグでP1、右半分は2P時のみP2） ===
+let dragLeft = false, dragRight = false;
+
+cvs.addEventListener('pointerdown', (e) => {
+  const x = e.clientX, y = e.clientY;
+  // タップで開始（タイトル/ゲームオーバーでも即スタート）
+  if (state.scene !== 'play') {
+    state.scene = 'play';
+    if (balls.length === 1 && balls[0].vx === 0 && balls[0].vy === 0) {
+      serveBall(balls[0], 'right');
+    }
+  }
+  if (x < window.innerWidth / 2) {
+    dragLeft = true;
+    p1.y = clamp(y - p1.h / 2, 0, window.innerHeight - p1.h);
+  } else if (!p2.isCPU) {
+    dragRight = true;
+    p2.y = clamp(y - p2.h / 2, 0, window.innerHeight - p2.h);
+  }
+  cvs.setPointerCapture(e.pointerId);
+  e.preventDefault();
+}, { passive: false });
+
+cvs.addEventListener('pointermove', (e) => {
+  if (!dragLeft && !dragRight) return;
+  const y = e.clientY;
+  if (dragLeft) {
+    p1.y = clamp(y - p1.h / 2, 0, window.innerHeight - p1.h);
+  }
+  if (dragRight && !p2.isCPU) {
+    p2.y = clamp(y - p2.h / 2, 0, window.innerHeight - p2.h);
+  }
+  e.preventDefault();
+}, { passive: false });
+
+cvs.addEventListener('pointerup', (e) => {
+  dragLeft = dragRight = false;
+  e.preventDefault();
+}, { passive: false });
+
+
+
+  
   function serveBall(b, toward){
     b.x = window.innerWidth/2; b.y = window.innerHeight/2;
     const dir = toward==='right' ? 1 : -1;
